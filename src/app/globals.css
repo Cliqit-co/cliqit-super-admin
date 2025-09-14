@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+  
+  body {
+    @apply bg-white text-gray-900;
+  }
+  
+  html {
+    @apply scroll-smooth;
+  }
+}
