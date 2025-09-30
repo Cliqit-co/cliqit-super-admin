@@ -8,6 +8,7 @@ import { Clock, Eye, TrendingUp, Mail, MapPin, User, CheckCircle, Instagram } fr
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { fetchInfluencerProfiles, type InfluencerProfile } from "@/data/influencers"
+import { InfluencerDetailsModal } from "@/components/dashboard/influencer-details-modal"
 
 export default function InfluencerVettingPage() {
   const [data, setData] = useState<InfluencerProfile[]>([])
@@ -26,6 +27,10 @@ export default function InfluencerVettingPage() {
   const [maxAudience, setMaxAudience] = useState<string>("")
   const [startDate, setStartDate] = useState<string>("")
   const [endDate, setEndDate] = useState<string>("")
+
+  // Modal state
+  const [selectedInfluencer, setSelectedInfluencer] = useState<InfluencerProfile | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -152,6 +157,31 @@ export default function InfluencerVettingPage() {
       return true
     })
   }, [data, search, city, niche, selectedCategories, verificationFilter, termsOnly, privacyOnly, minAudience, maxAudience, startDate, endDate])
+
+  const handleCardClick = (influencer: InfluencerProfile) => {
+    setSelectedInfluencer(influencer)
+    setIsModalOpen(true)
+  }
+
+  const handleModalClose = () => {
+    setIsModalOpen(false)
+    setSelectedInfluencer(null)
+  }
+
+  const handleApprove = (id: string) => {
+    console.log("Approving influencer:", id)
+    // TODO: Implement approval logic
+  }
+
+  const handleReject = (id: string) => {
+    console.log("Rejecting influencer:", id)
+    // TODO: Implement rejection logic
+  }
+
+  const handleHold = (id: string) => {
+    console.log("Holding influencer:", id)
+    // TODO: Implement hold logic
+  }
 
   return (
     <div className="space-y-6">
@@ -310,7 +340,11 @@ export default function InfluencerVettingPage() {
           ) : (
             <div className="space-y-4">
               {filteredData.map((inf) => (
-                <div key={inf.id} className="p-6 border rounded-lg hover:bg-accent/50 transition-colors">
+                <div 
+                  key={inf.id} 
+                  className="p-6 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                  onClick={() => handleCardClick(inf)}
+                >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-4">
                       <RemoteAvatar src={inf.avatarUrl || undefined} alt={inf.username} size={48} />
@@ -332,6 +366,7 @@ export default function InfluencerVettingPage() {
                               target="_blank"
                               rel="noopener noreferrer"
                               className="ml-auto"
+                              onClick={(e) => e.stopPropagation()}
                             >
                               <Button variant="outline" size="sm" className="gap-2">
                                 <Instagram className="h-4 w-4" />
@@ -394,6 +429,18 @@ export default function InfluencerVettingPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal */}
+      {selectedInfluencer && (
+        <InfluencerDetailsModal
+          influencer={selectedInfluencer}
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          onApprove={handleApprove}
+          onReject={handleReject}
+          onHold={handleHold}
+        />
+      )}
     </div>
   )
 }
