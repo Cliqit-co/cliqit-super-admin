@@ -22,6 +22,14 @@ const statusConfig = {
   
   // Vetting statuses
   approved: { variant: "success" as const, label: "Approved" },
+  verified: { variant: "success" as const, label: "Verified" },
+  unverified: { variant: "secondary" as const, label: "Unverified" },
+  email_verified: { variant: "success" as const, label: "Email Verified" },
+  email_unverified: { variant: "warning" as const, label: "Email Unverified" },
+  terms_accepted: { variant: "success" as const, label: "Terms Accepted" },
+  terms_missing: { variant: "warning" as const, label: "Terms Missing" },
+  privacy_accepted: { variant: "success" as const, label: "Privacy Accepted" },
+  privacy_missing: { variant: "warning" as const, label: "Privacy Missing" },
   
   // Gig statuses
   draft: { variant: "secondary" as const, label: "Draft" },

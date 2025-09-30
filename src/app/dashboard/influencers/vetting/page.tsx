@@ -1,221 +1,267 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { RemoteAvatar } from "@/components/remote-avatar"
 import { Badge } from "@/components/ui/badge"
-import { StatusBadge } from "@/components/dashboard/status-badge"
-import { InfluencerDetailsModal } from "@/components/dashboard/influencer-details-modal"
-import { 
-  Eye, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  Star,
-  Users,
-  TrendingUp,
-  AlertCircle
-} from "lucide-react"
-
-// Mock data - replace with actual data from your API
-const mockInfluencers = [
-  {
-    id: "1",
-    firstName: "Sarah",
-    lastName: "Johnson",
-    email: "sarah@example.com",
-    phone: "+91 9876543210",
-    city: "Mumbai",
-    audienceSize: "100K - 500K",
-    niche: "Fashion",
-    instagramUsername: "@sarahjohnson_fashion",
-    status: "pending",
-    appliedAt: "2024-01-15",
-    mailingListSubscribed: true,
-    termsAccepted: true,
-    privacyPolicyAccepted: true,
-    termsOfServiceAccepted: true,
-    socialMedia: [
-      { platform: "instagram", followers: 125000, engagement: 4.2 }
-    ]
-  },
-  {
-    id: "2",
-    firstName: "Mike",
-    lastName: "Chen",
-    email: "mike@example.com",
-    phone: "+91 9876543211",
-    city: "Bangalore",
-    audienceSize: "50K - 100K",
-    niche: "Tech",
-    instagramUsername: "@mikechen_tech",
-    status: "under_review",
-    appliedAt: "2024-01-14",
-    mailingListSubscribed: false,
-    termsAccepted: true,
-    privacyPolicyAccepted: true,
-    termsOfServiceAccepted: true,
-    socialMedia: [
-      { platform: "instagram", followers: 89000, engagement: 3.8 }
-    ]
-  },
-  {
-    id: "3",
-    firstName: "Emma",
-    lastName: "Davis",
-    email: "emma@example.com",
-    phone: "+91 9876543212",
-    city: "Delhi",
-    audienceSize: "500K - 1M",
-    niche: "Makeup",
-    instagramUsername: "@emmadavis_beauty",
-    status: "pending",
-    appliedAt: "2024-01-13",
-    mailingListSubscribed: true,
-    termsAccepted: true,
-    privacyPolicyAccepted: true,
-    termsOfServiceAccepted: true,
-    socialMedia: [
-      { platform: "instagram", followers: 250000, engagement: 5.1 }
-    ]
-  },
-  {
-    id: "4",
-    firstName: "Alex",
-    lastName: "Rodriguez",
-    email: "alex@example.com",
-    phone: "+91 9876543213",
-    city: "Pune",
-    audienceSize: "25K - 50K",
-    niche: "Gaming",
-    instagramUsername: "@alexrodriguez_gaming",
-    status: "pending",
-    appliedAt: "2024-01-12",
-    mailingListSubscribed: false,
-    termsAccepted: true,
-    privacyPolicyAccepted: true,
-    termsOfServiceAccepted: true,
-    socialMedia: [
-      { platform: "instagram", followers: 45000, engagement: 6.2 }
-    ]
-  },
-  {
-    id: "5",
-    firstName: "Priya",
-    lastName: "Sharma",
-    email: "priya@example.com",
-    phone: "+91 9876543214",
-    city: "Bangalore",
-    audienceSize: "1M+",
-    niche: "Foodie",
-    instagramUsername: "@priyasharma_food",
-    status: "pending",
-    appliedAt: "2024-01-11",
-    mailingListSubscribed: true,
-    termsAccepted: true,
-    privacyPolicyAccepted: true,
-    termsOfServiceAccepted: true,
-    socialMedia: [
-      { platform: "instagram", followers: 1200000, engagement: 7.8 }
-    ]
-  },
-  {
-    id: "6",
-    firstName: "Rahul",
-    lastName: "Patel",
-    email: "rahul@example.com",
-    phone: "+91 9876543215",
-    city: "Delhi",
-    audienceSize: "10K - 25K",
-    niche: "Artist",
-    instagramUsername: "@rahulpatel_art",
-    status: "pending",
-    appliedAt: "2024-01-10",
-    mailingListSubscribed: false,
-    termsAccepted: true,
-    privacyPolicyAccepted: true,
-    termsOfServiceAccepted: true,
-    socialMedia: [
-      { platform: "instagram", followers: 18000, engagement: 8.5 }
-    ]
-  },
-  {
-    id: "7",
-    firstName: "Ananya",
-    lastName: "Singh",
-    email: "ananya@example.com",
-    phone: "+91 9876543216",
-    city: "Mumbai",
-    audienceSize: "500K - 1M",
-    niche: "Lifestyle",
-    instagramUsername: "@ananyasingh_lifestyle",
-    status: "pending",
-    appliedAt: "2024-01-09",
-    mailingListSubscribed: true,
-    termsAccepted: true,
-    privacyPolicyAccepted: true,
-    termsOfServiceAccepted: true,
-    socialMedia: [
-      { platform: "instagram", followers: 750000, engagement: 6.3 }
-    ]
-  },
-  {
-    id: "8",
-    firstName: "Vikram",
-    lastName: "Kumar",
-    email: "vikram@example.com",
-    phone: "+91 9876543217",
-    city: "Pune",
-    audienceSize: "5K - 10K",
-    niche: "Sports",
-    instagramUsername: "@vikramkumar_sports",
-    status: "pending",
-    appliedAt: "2024-01-08",
-    mailingListSubscribed: false,
-    termsAccepted: true,
-    privacyPolicyAccepted: true,
-    termsOfServiceAccepted: true,
-    socialMedia: [
-      { platform: "instagram", followers: 8500, engagement: 9.2 }
-    ]
-  }
-]
+import { Clock, Eye, TrendingUp, Mail, MapPin, User, CheckCircle, Instagram } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { fetchInfluencerProfiles, type InfluencerProfile } from "@/data/influencers"
 
 export default function InfluencerVettingPage() {
-  const [selectedInfluencer, setSelectedInfluencer] = useState<string | null>(null)
-  const [influencers, setInfluencers] = useState(mockInfluencers)
+  const [data, setData] = useState<InfluencerProfile[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const pendingCount = influencers.filter(i => i.status === "pending").length
-  const underReviewCount = influencers.filter(i => i.status === "under_review").length
+  // Filters
+  const [search, setSearch] = useState("")
+  const [city, setCity] = useState<string>("")
+  const [niche, setNiche] = useState<string>("")
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [verificationFilter, setVerificationFilter] = useState<string>("all")
+  const [termsOnly, setTermsOnly] = useState(false)
+  const [privacyOnly, setPrivacyOnly] = useState(false)
+  const [minAudience, setMinAudience] = useState<string>("")
+  const [maxAudience, setMaxAudience] = useState<string>("")
+  const [startDate, setStartDate] = useState<string>("")
+  const [endDate, setEndDate] = useState<string>("")
 
-  const handleApprove = (id: string) => {
-    setInfluencers(prev => prev.map(inf => 
-      inf.id === id ? { ...inf, status: "approved" } : inf
-    ))
+  useEffect(() => {
+    let mounted = true
+    setLoading(true)
+    fetchInfluencerProfiles()
+      .then((rows) => {
+        if (!mounted) return
+        setData(rows)
+      })
+      .catch((err) => {
+        if (!mounted) return
+        setError(err.message || "Failed to load influencers")
+      })
+      .finally(() => mounted && setLoading(false))
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  const pendingCount = 0 // Placeholder: replace when backend includes statuses
+  const underReviewCount = 0 // Placeholder
+
+  const cityOptions = useMemo(() => {
+    const set = new Set<string>()
+    for (const i of data) {
+      if (i.city) set.add(i.city)
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [data])
+
+  const nicheOptions = useMemo(() => {
+    const set = new Set<string>()
+    for (const i of data) {
+      if (i.niche) set.add(i.niche)
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [data])
+
+  const categoryOptions = useMemo(() => {
+    const set = new Set<string>()
+    for (const i of data) {
+      for (const c of i.categories || []) set.add(c)
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [data])
+
+  function getInstagramUrl(links: Record<string, unknown> | null | undefined): string | undefined {
+    if (!links) return undefined
+    const anyLinks = links as Record<string, unknown>
+    const candidates = [
+      "instagram",
+      "instagramUrl",
+      "instagram_url",
+      "ig",
+      "instagramHandle",
+      "instagram_handle",
+    ]
+    for (const key of candidates) {
+      const raw = anyLinks[key]
+      if (typeof raw === "string" && raw.trim()) {
+        const val = raw.trim()
+        if (val.startsWith("http://") || val.startsWith("https://")) return val
+        const username = val.replace(/^@/, "")
+        return `https://instagram.com/${username}`
+      }
+    }
+    return undefined
   }
 
-  const handleReject = (id: string) => {
-    setInfluencers(prev => prev.map(inf => 
-      inf.id === id ? { ...inf, status: "rejected" } : inf
-    ))
-  }
+  const filteredData = useMemo(() => {
+    const s = search.trim().toLowerCase()
+    const minAud = minAudience ? parseInt(minAudience, 10) : undefined
+    const maxAud = maxAudience ? parseInt(maxAudience, 10) : undefined
+    const start = startDate ? new Date(startDate) : undefined
+    const end = endDate ? new Date(endDate) : undefined
 
-  const handleHold = (id: string) => {
-    setInfluencers(prev => prev.map(inf => 
-      inf.id === id ? { ...inf, status: "under_review" } : inf
-    ))
-  }
+    return data.filter((i) => {
+      // search across name, username, email, city, niche
+      if (s) {
+        const hay = [
+          i.firstName,
+          i.lastName,
+          i.username,
+          i.email,
+          i.city || "",
+          i.niche || "",
+          (i.categories || []).join(" "),
+        ]
+          .join(" ")
+          .toLowerCase()
+        if (!hay.includes(s)) return false
+      }
 
-  const selectedInfluencerData = influencers.find(inf => inf.id === selectedInfluencer)
+      if (city && i.city !== city) return false
+      if (niche && i.niche !== niche) return false
+
+      if (selectedCategories.length > 0) {
+        const cats = new Set(i.categories || [])
+        for (const c of selectedCategories) {
+          if (!cats.has(c)) return false
+        }
+      }
+
+      if (verificationFilter === "verified" && !i.verifiedUser) return false
+      if (verificationFilter === "unverified" && i.verifiedUser) return false
+      if (termsOnly && !i.acceptedTerms) return false
+      if (privacyOnly && !i.acceptedPrivacy) return false
+
+      const aud = i.audienceSize ? parseInt(i.audienceSize, 10) : undefined
+      if (minAud !== undefined && (aud ?? 0) < minAud) return false
+      if (maxAud !== undefined && (aud ?? 0) > maxAud) return false
+
+      if (start || end) {
+        const created = new Date(i.createdAt)
+        if (start && created < start) return false
+        if (end) {
+          // include end date inclusive by adding 1 day at midnight
+          const endInclusive = new Date(end)
+          endInclusive.setDate(endInclusive.getDate() + 1)
+          if (created >= endInclusive) return false
+        }
+      }
+
+      return true
+    })
+  }, [data, search, city, niche, selectedCategories, verificationFilter, termsOnly, privacyOnly, minAudience, maxAudience, startDate, endDate])
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Influencer Vetting</h1>
-        <p className="text-muted-foreground">
-          Review and approve influencer applications
-        </p>
+        <p className="text-muted-foreground">Review and approve influencer applications</p>
       </div>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filters</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Search</label>
+              <Input placeholder="Name, @username, email, niche..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">City</label>
+              <select className="w-full h-10 border border-gray-300 rounded-md px-3 text-sm" value={city} onChange={(e) => setCity(e.target.value)}>
+                <option value="">All</option>
+                {cityOptions.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Niche</label>
+              <select className="w-full h-10 border border-gray-300 rounded-md px-3 text-sm" value={niche} onChange={(e) => setNiche(e.target.value)}>
+                <option value="">All</option>
+                {nicheOptions.map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Categories</label>
+              <select
+                multiple
+                className="w-full min-h-[2.5rem] border border-gray-300 rounded-md px-3 py-2 text-sm"
+                value={selectedCategories}
+                onChange={(e) => {
+                  const values = Array.from(e.target.selectedOptions).map((o) => o.value)
+                  setSelectedCategories(values)
+                }}
+              >
+                {categoryOptions.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            {/* Removed event filters */}
+            <div className="md:col-span-2 grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Min Audience</label>
+                <Input type="number" inputMode="numeric" placeholder="0" value={minAudience} onChange={(e) => setMinAudience(e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Max Audience</label>
+                <Input type="number" inputMode="numeric" placeholder="1000000" value={maxAudience} onChange={(e) => setMaxAudience(e.target.value)} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Joined After</label>
+                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Joined Before</label>
+                <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Verification Status</label>
+              <select className="w-full h-10 border border-gray-300 rounded-md px-3 text-sm" value={verificationFilter} onChange={(e) => setVerificationFilter(e.target.value)}>
+                <option value="all">All</option>
+                <option value="verified">Verified Only</option>
+                <option value="unverified">Unverified Only</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-4">
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input type="checkbox" className="h-4 w-4" checked={termsOnly} onChange={(e) => setTermsOnly(e.target.checked)} />
+                Accepted Terms
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input type="checkbox" className="h-4 w-4" checked={privacyOnly} onChange={(e) => setPrivacyOnly(e.target.checked)} />
+                Accepted Privacy
+              </label>
+            </div>
+          </div>
+          <div className="mt-4 flex gap-2">
+            <Button variant="outline" onClick={() => {
+              setSearch("")
+              setCity("")
+              setNiche("")
+              setSelectedCategories([])
+              setVerificationFilter("all")
+              setTermsOnly(false)
+              setPrivacyOnly(false)
+              setMinAudience("")
+              setMaxAudience("")
+              setStartDate("")
+              setEndDate("")
+            }}>Clear filters</Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
@@ -225,9 +271,7 @@ export default function InfluencerVettingPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{pendingCount}</div>
-            <p className="text-xs text-muted-foreground">
-              Awaiting initial review
-            </p>
+            <p className="text-xs text-muted-foreground">Awaiting initial review</p>
           </CardContent>
         </Card>
 
@@ -238,9 +282,7 @@ export default function InfluencerVettingPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{underReviewCount}</div>
-            <p className="text-xs text-muted-foreground">
-              Currently being reviewed
-            </p>
+            <p className="text-xs text-muted-foreground">Currently being reviewed</p>
           </CardContent>
         </Card>
 
@@ -250,122 +292,108 @@ export default function InfluencerVettingPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">78%</div>
-            <p className="text-xs text-muted-foreground">
-              Last 30 days
-            </p>
+            <div className="text-2xl font-bold">—</div>
+            <p className="text-xs text-muted-foreground">Last 30 days</p>
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Influencer Applications</CardTitle>
+          <CardTitle>Influencer Profiles</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {influencers.map((influencer) => (
-              <div
-                key={influencer.id}
-                className="p-6 border rounded-lg hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-4">
-                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                      <Users className="h-6 w-6 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <h3 className="font-medium text-lg">{influencer.firstName} {influencer.lastName}</h3>
-                        <StatusBadge status={influencer.status} />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground mb-3">
-                        <div>
-                          <p><strong>Email:</strong> {influencer.email}</p>
-                          <p><strong>Phone:</strong> {influencer.phone}</p>
-                          <p><strong>City:</strong> {influencer.city}</p>
+          {error ? (
+            <div className="text-sm text-red-600">{error}</div>
+          ) : loading ? (
+            <div className="text-sm text-muted-foreground">Loading...</div>
+          ) : (
+            <div className="space-y-4">
+              {filteredData.map((inf) => (
+                <div key={inf.id} className="p-6 border rounded-lg hover:bg-accent/50 transition-colors">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-4">
+                      <RemoteAvatar src={inf.avatarUrl || undefined} alt={inf.username} size={48} />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <h3 className="font-medium text-lg">
+                            {inf.firstName} {inf.lastName}
+                          </h3>
+                          <span className="text-sm text-muted-foreground">@{inf.username}</span>
+                          <Badge variant={inf.verifiedUser ? "success" : "secondary"}>
+                            {inf.verifiedUser ? "Verified" : "Unverified"}
+                          </Badge>
+                          <Badge variant={inf.acceptedTerms ? "success" : "secondary"}>Terms</Badge>
+                          <Badge variant={inf.acceptedPrivacy ? "success" : "secondary"}>Privacy</Badge>
+                          {/* Instagram link */}
+                          {getInstagramUrl(inf.socialLinks as any) && (
+                            <a
+                              href={getInstagramUrl(inf.socialLinks as any)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ml-auto"
+                            >
+                              <Button variant="outline" size="sm" className="gap-2">
+                                <Instagram className="h-4 w-4" />
+                                Instagram
+                              </Button>
+                            </a>
+                          )}
                         </div>
-                        <div>
-                          <p><strong>Audience Size:</strong> {influencer.audienceSize}</p>
-                          <p><strong>Niche:</strong> {influencer.niche}</p>
-                          <p><strong>Instagram:</strong> {influencer.instagramUsername}</p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground mb-3">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Mail className="h-4 w-4" />
+                              <span className="text-foreground">{inf.email}</span>
+                            </div>
+                            {inf.city && (
+                              <div className="flex items-center gap-2">
+                                <MapPin className="h-4 w-4" />
+                                <span className="text-foreground">{inf.city}</span>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4" />
+                              <span className="text-foreground">Joined: {new Date(inf.createdAt).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <div>
+                              <span className="font-medium text-foreground">Audience Size:</span>{" "}
+                              <span className="text-foreground">{inf.audienceSize || "-"}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-foreground">Niche:</span>
+                              <Badge variant="secondary">{inf.niche || "-"}</Badge>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-4 text-sm">
-                        <div className="flex items-center space-x-1">
-                          <Users className="h-4 w-4" />
-                          <span>{influencer.socialMedia[0]?.followers?.toLocaleString()} followers</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <TrendingUp className="h-4 w-4" />
-                          <span>{influencer.socialMedia[0]?.engagement}% engagement</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                            Applied: {new Date(influencer.appliedAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                        {influencer.mailingListSubscribed && (
-                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                            Mailing List
-                          </span>
+
+                        {Array.isArray(inf.categories) && inf.categories.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {inf.categories.slice(0, 6).map((cat) => (
+                              <Badge key={cat} variant="outline" className="capitalize">
+                                {cat}
+                              </Badge>
+                            ))}
+                            {inf.categories.length > 6 && (
+                              <span className="text-xs text-muted-foreground">+{inf.categories.length - 6}</span>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedInfluencer(influencer.id)}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      View Details
-                    </Button>
-                    {influencer.status === "pending" && (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                          onClick={() => handleApprove(influencer.id)}
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Approve
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => handleReject(influencer.id)}
-                        >
-                          <XCircle className="h-4 w-4 mr-1" />
-                          Reject
-                        </Button>
-                      </>
-                    )}
-                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+              {data.length === 0 && (
+                <div className="text-sm text-muted-foreground">No influencers found.</div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {/* Influencer Details Modal */}
-      {selectedInfluencerData && (
-        <InfluencerDetailsModal
-          influencer={selectedInfluencerData}
-          isOpen={!!selectedInfluencer}
-          onClose={() => setSelectedInfluencer(null)}
-          onApprove={handleApprove}
-          onReject={handleReject}
-          onHold={handleHold}
-        />
-      )}
     </div>
   )
 }
