@@ -1,3 +1,4 @@
+"use client"
 import Link from "next/link"
 import { 
   LayoutDashboard, 
@@ -5,6 +6,8 @@ import {
   LogOut
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { nhost } from "@/lib/nhost"
+import { useRouter } from "next/navigation"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -12,6 +15,12 @@ const navigation = [
 ]
 
 export function Sidebar() {
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await nhost.auth.signOut()
+    router.replace("/sign-in")
+  }
   return (
     <div className="flex h-full w-64 flex-col bg-white border-r border-gray-200">
       {/* Logo Section */}
@@ -55,6 +64,7 @@ export function Sidebar() {
         <Button 
           variant="ghost" 
           className="w-full justify-start text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+          onClick={handleLogout}
         >
           <LogOut className="mr-2 h-4 w-4" />
           Logout
