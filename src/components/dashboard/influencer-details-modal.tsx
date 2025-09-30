@@ -54,6 +54,19 @@ function buildInstagramUrl(links?: Record<string, unknown> | null): string | und
   return undefined
 }
 
+function extractInstagramUsername(url: string): string {
+  try {
+    const urlObj = new URL(url)
+    const pathname = urlObj.pathname
+    const username = pathname.split('/').filter(Boolean)[0]
+    return username || ''
+  } catch {
+    // Fallback: extract from URL string
+    const match = url.match(/instagram\.com\/([^\/\?]+)/)
+    return match ? match[1] : ''
+  }
+}
+
 export function InfluencerDetailsModal({
   influencer,
   isOpen,
@@ -164,13 +177,6 @@ export function InfluencerDetailsModal({
                     <span className="font-medium">Niche:</span>
                     <Badge variant="secondary">{influencer.niche || '-'}</Badge>
                   </div>
-                  {influencer.dob && (
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">Date of Birth:</span>
-                      <span>{new Date(influencer.dob).toLocaleDateString()}</span>
-                    </div>
-                  )}
                 </div>
               </div>
               {influencer.bio && (
@@ -196,6 +202,40 @@ export function InfluencerDetailsModal({
                   {influencer.categories.map((cat) => (
                     <Badge key={cat} variant="outline" className="capitalize">{cat}</Badge>
                   ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Instagram Profile Embed */}
+          {instagramUrl && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Instagram className="h-5 w-5" />
+                  <span>Instagram Profile</span>
+                  <a 
+                    href={instagramUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="ml-auto text-sm text-blue-600 hover:underline"
+                  >
+                    View on Instagram →
+                  </a>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="w-full">
+                  <iframe
+                    src={`https://www.instagram.com/${extractInstagramUsername(instagramUrl)}/embed/`}
+                    width="100%"
+                    height="400"
+                    frameBorder="0"
+                    scrolling="no"
+                    allowTransparency={true}
+                    className="rounded-lg border"
+                    title={`Instagram profile for ${influencer.username}`}
+                  />
                 </div>
               </CardContent>
             </Card>
