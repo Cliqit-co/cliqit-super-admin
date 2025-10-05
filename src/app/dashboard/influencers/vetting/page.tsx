@@ -4,10 +4,11 @@ import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { RemoteAvatar } from "@/components/remote-avatar"
 import { Badge } from "@/components/ui/badge"
-import { Clock, Eye, TrendingUp, Mail, MapPin, User, CheckCircle, Instagram } from "lucide-react"
+import { Clock, Eye, TrendingUp, Mail, MapPin, Instagram } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { fetchInfluencerProfiles, type InfluencerProfile } from "@/data/influencers"
+import { jsonToCsv, downloadCsv } from "@/lib/csv"
 import { InfluencerDetailsModal } from "@/components/dashboard/influencer-details-modal"
 
 export default function InfluencerVettingPage() {
@@ -289,6 +290,78 @@ export default function InfluencerVettingPage() {
               setStartDate("")
               setEndDate("")
             }}>Clear filters</Button>
+            <Button
+              onClick={(e) => {
+                e.stopPropagation()
+                try {
+                  // pick fields to include in CSV
+                  const rows = filteredData.map((f) => ({
+                    id: f.id,
+                    firstName: f.firstName,
+                    lastName: f.lastName,
+                    username: f.username,
+                    email: f.email,
+                    city: f.city ?? "",
+                    niche: f.niche ?? "",
+                    categories: (f.categories || []).join("; "),
+                    audienceSize: f.audienceSize ?? "",
+                    verifiedUser: f.verifiedUser,
+                    acceptedTerms: f.acceptedTerms,
+                    acceptedPrivacy: f.acceptedPrivacy,
+                    createdAt: f.createdAt,
+                    updatedAt: f.updatedAt,
+                    socialLinks: f.socialLinks ? JSON.stringify(f.socialLinks) : "",
+                    bio: f.bio ?? "",
+                  }))
+
+                  const csv = jsonToCsv(rows, {
+                    fields: [
+                      "id",
+                      "firstName",
+                      "lastName",
+                      "username",
+                      "email",
+                      "city",
+                      "niche",
+                      "categories",
+                      "audienceSize",
+                      "verifiedUser",
+                      "acceptedTerms",
+                      "acceptedPrivacy",
+                      "createdAt",
+                      "updatedAt",
+                      "socialLinks",
+                      "bio",
+                    ],
+                    headers: {
+                      id: "ID",
+                      firstName: "First Name",
+                      lastName: "Last Name",
+                      username: "Username",
+                      email: "Email",
+                      city: "City",
+                      niche: "Niche",
+                      categories: "Categories",
+                      audienceSize: "Audience Size",
+                      verifiedUser: "Verified",
+                      acceptedTerms: "Accepted Terms",
+                      acceptedPrivacy: "Accepted Privacy",
+                      createdAt: "Created At",
+                      updatedAt: "Updated At",
+                      socialLinks: "Social Links",
+                      bio: "Bio",
+                    },
+                  })
+
+                  const ts = new Date().toISOString().replace(/[:.]/g, "-")
+                  downloadCsv(csv, `influencers-${ts}.csv`)
+                } catch (err) {
+                  console.error("Failed to export CSV", err)
+                }
+              }}
+            >
+              Download CSV
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -360,9 +433,9 @@ export default function InfluencerVettingPage() {
                           <Badge variant={inf.acceptedTerms ? "success" : "secondary"}>Terms</Badge>
                           <Badge variant={inf.acceptedPrivacy ? "success" : "secondary"}>Privacy</Badge>
                           {/* Instagram link */}
-                          {getInstagramUrl(inf.socialLinks as any) && (
+                          {getInstagramUrl(inf.socialLinks) && (
                             <a
-                              href={getInstagramUrl(inf.socialLinks as any)}
+                              href={getInstagramUrl(inf.socialLinks)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="ml-auto"
