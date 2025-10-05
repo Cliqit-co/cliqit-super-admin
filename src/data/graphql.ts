@@ -63,3 +63,18 @@ export type UserAcceptanceRow = {
   accepted_pp: boolean
   verified_user: boolean
 }
+
+export const MUTATION_UPDATE_USER_VERIFICATION = `
+  mutation UpdateUserVerification($user_id: uuid!, $verified_user: Boolean!) {
+    update_user_acceptance_by_pk(pk_columns: {user_id: $user_id}, _set: {verified_user: $verified_user}) {
+      accepted_pp
+      accepted_tm
+      user_id
+      verified_user
+    }
+  }
+`
+
+export type UpdateUserVerificationResult = {
+  update_user_acceptance_by_pk: UserAcceptanceRow | null
+}

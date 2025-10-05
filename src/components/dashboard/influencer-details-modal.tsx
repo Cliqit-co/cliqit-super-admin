@@ -9,7 +9,6 @@ import {
   X, 
   CheckCircle, 
   XCircle, 
-  Clock,
   User,
   Mail,
   Phone,
@@ -36,7 +35,7 @@ interface InfluencerDetailsModalProps {
   onClose: () => void
   onApprove: (id: string) => void
   onReject: (id: string) => void
-  onHold: (id: string) => void
+  isUpdating?: boolean
 }
 
 function buildInstagramUrl(links?: Record<string, unknown> | null): string | undefined {
@@ -73,7 +72,7 @@ export function InfluencerDetailsModal({
   onClose,
   onApprove,
   onReject,
-  onHold
+  isUpdating = false
 }: InfluencerDetailsModalProps) {
   const [reviewNotes, setReviewNotes] = useState("")
   const [vettingScore, setVettingScore] = useState<number | null>(null)
@@ -84,17 +83,19 @@ export function InfluencerDetailsModal({
 
   const handleApprove = () => {
     onApprove(influencer.id)
-    onClose()
+  }
+
+  const handleUnapprove = () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to unapprove this user? This will revoke their verified status."
+    )
+    if (confirmed) {
+      onApprove(influencer.id) // Same function, just different context
+    }
   }
 
   const handleReject = () => {
     onReject(influencer.id)
-    onClose()
-  }
-
-  const handleHold = () => {
-    onHold(influencer.id)
-    onClose()
   }
 
   return (
@@ -319,27 +320,32 @@ export function InfluencerDetailsModal({
           <div className="flex justify-end space-x-3 pt-4 border-t">
             <Button
               variant="outline"
-              onClick={handleHold}
-              className="text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
-            >
-              <Clock className="h-4 w-4 mr-2" />
-              Hold for Review
-            </Button>
-            <Button
-              variant="outline"
               onClick={handleReject}
+              disabled={isUpdating}
               className="text-red-600 hover:text-red-700 hover:bg-red-50"
             >
               <XCircle className="h-4 w-4 mr-2" />
-              Reject Application
+              {isUpdating ? "Updating..." : "Reject Application"}
             </Button>
-            <Button
-              onClick={handleApprove}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Approve Application
-            </Button>
+            {influencer.verifiedUser ? (
+              <Button
+                onClick={handleUnapprove}
+                disabled={isUpdating}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                {isUpdating ? "Updating..." : "Unapprove User"}
+              </Button>
+            ) : (
+              <Button
+                onClick={handleApprove}
+                disabled={isUpdating}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                {isUpdating ? "Updating..." : "Approve Application"}
+              </Button>
+            )}
           </div>
         </div>
       </div>

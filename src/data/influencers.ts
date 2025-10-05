@@ -1,5 +1,5 @@
 import { graphqlRequest } from "@/lib/graphql-client"
-import { QUERY_INFLUENCER_PROFILES, QUERY_USER_ACCEPTANCE, type InfluencerProfileRow, type UserAcceptanceRow } from "./graphql"
+import { QUERY_INFLUENCER_PROFILES, QUERY_USER_ACCEPTANCE, MUTATION_UPDATE_USER_VERIFICATION, type InfluencerProfileRow, type UserAcceptanceRow, type UpdateUserVerificationResult } from "./graphql"
 import { getNhostFileUrl } from "@/lib/nhost-storage"
 
 export type InfluencerProfile = {
@@ -85,6 +85,23 @@ export async function fetchInfluencerProfiles(): Promise<InfluencerProfile[]> {
   )
 
   return resolved
+}
+
+export async function updateUserVerification(userId: string, verified: boolean): Promise<boolean> {
+  try {
+    const result = await graphqlRequest<UpdateUserVerificationResult>(
+      MUTATION_UPDATE_USER_VERIFICATION,
+      {
+        user_id: userId,
+        verified_user: verified
+      }
+    )
+    
+    return !!result.update_user_acceptance_by_pk
+  } catch (error) {
+    console.error('Failed to update user verification:', error)
+    throw new Error('Failed to update user verification status')
+  }
 }
 
 

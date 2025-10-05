@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Clock, Eye, TrendingUp, Mail, MapPin, Instagram } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { fetchInfluencerProfiles, type InfluencerProfile } from "@/data/influencers"
+import { fetchInfluencerProfiles, updateUserVerification, type InfluencerProfile } from "@/data/influencers"
 import { jsonToCsv, downloadCsv } from "@/lib/csv"
 import { InfluencerDetailsModal } from "@/components/dashboard/influencer-details-modal"
 
@@ -15,6 +15,8 @@ export default function InfluencerVettingPage() {
   const [data, setData] = useState<InfluencerProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [updatingUsers, setUpdatingUsers] = useState<Set<string>>(new Set())
 
   // Filters
   const [search, setSearch] = useState("")
@@ -169,19 +171,65 @@ export default function InfluencerVettingPage() {
     setSelectedInfluencer(null)
   }
 
-  const handleApprove = (id: string) => {
-    console.log("Approving influencer:", id)
-    // TODO: Implement approval logic
+  const handleApprove = async (id: string) => {
+    setUpdatingUsers(prev => new Set(prev).add(id))
+    try {
+      // Find the current user to determine if we're approving or unapproving
+      const currentUser = data.find(inf => inf.id === id)
+      const isCurrentlyVerified = currentUser?.verifiedUser || false
+      const newVerifiedStatus = !isCurrentlyVerified
+      
+      const success = await updateUserVerification(id, newVerifiedStatus)
+      if (success) {
+        // Update local state
+        setData(prev => prev.map(inf => 
+          inf.id === id ? { ...inf, verifiedUser: newVerifiedStatus } : inf
+        ))
+        setError(null)
+        setSuccessMessage(
+          newVerifiedStatus 
+            ? "Influencer approved successfully!" 
+            : "Influencer unapproved successfully!"
+        )
+        setTimeout(() => setSuccessMessage(null), 3000)
+      } else {
+        setError(`Failed to ${newVerifiedStatus ? 'approve' : 'unapprove'} influencer`)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update influencer status")
+    } finally {
+      setUpdatingUsers(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(id)
+        return newSet
+      })
+    }
   }
 
-  const handleReject = (id: string) => {
-    console.log("Rejecting influencer:", id)
-    // TODO: Implement rejection logic
-  }
-
-  const handleHold = (id: string) => {
-    console.log("Holding influencer:", id)
-    // TODO: Implement hold logic
+  const handleReject = async (id: string) => {
+    setUpdatingUsers(prev => new Set(prev).add(id))
+    try {
+      const success = await updateUserVerification(id, false)
+      if (success) {
+        // Update local state
+        setData(prev => prev.map(inf => 
+          inf.id === id ? { ...inf, verifiedUser: false } : inf
+        ))
+        setError(null)
+        setSuccessMessage("Influencer rejected successfully!")
+        setTimeout(() => setSuccessMessage(null), 3000)
+      } else {
+        setError("Failed to reject influencer")
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to reject influencer")
+    } finally {
+      setUpdatingUsers(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(id)
+        return newSet
+      })
+    }
   }
 
   return (
@@ -189,6 +237,16 @@ export default function InfluencerVettingPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Influencer Vetting</h1>
         <p className="text-muted-foreground">Review and approve influencer applications</p>
+        {successMessage && (
+          <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-md">
+            {successMessage}
+          </div>
+        )}
+        {error && (
+          <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+            {error}
+          </div>
+        )}
       </div>
 
       {/* Filters */}
@@ -406,9 +464,7 @@ export default function InfluencerVettingPage() {
           <CardTitle>Influencer Profiles</CardTitle>
         </CardHeader>
         <CardContent>
-          {error ? (
-            <div className="text-sm text-red-600">{error}</div>
-          ) : loading ? (
+          {loading ? (
             <div className="text-sm text-muted-foreground">Loading...</div>
           ) : (
             <div className="space-y-4">
@@ -428,7 +484,7 @@ export default function InfluencerVettingPage() {
                           </h3>
                           <span className="text-sm text-muted-foreground">@{inf.username}</span>
                           <Badge variant={inf.verifiedUser ? "success" : "secondary"}>
-                            {inf.verifiedUser ? "Verified" : "Unverified"}
+                            {inf.verifiedUser ? "Approved" : "Pending Approval"}
                           </Badge>
                           <Badge variant={inf.acceptedTerms ? "success" : "secondary"}>Terms</Badge>
                           <Badge variant={inf.acceptedPrivacy ? "success" : "secondary"}>Privacy</Badge>
@@ -511,7 +567,7 @@ export default function InfluencerVettingPage() {
           onClose={handleModalClose}
           onApprove={handleApprove}
           onReject={handleReject}
-          onHold={handleHold}
+          isUpdating={updatingUsers.has(selectedInfluencer.id)}
         />
       )}
     </div>
