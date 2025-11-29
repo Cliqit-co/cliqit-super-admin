@@ -3,6 +3,7 @@ import Link from "next/link"
 import { 
   LayoutDashboard, 
   UserCheck, 
+  Bell,
   LogOut
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -12,6 +13,7 @@ import { useRouter } from "next/navigation"
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Influencer Review", href: "/dashboard/influencers/vetting", icon: UserCheck },
+  { name: "Notifications", href: "/dashboard/notifications", icon: Bell },
 ]
 
 export function Sidebar() {

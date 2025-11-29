@@ -1,6 +1,6 @@
 export const QUERY_INFLUENCER_PROFILES = `
   query GetInfluencerProfiles {
-    influencer_profiles {
+    influencer_profiles(order_by: {created_at: desc}) {
     audience_size
     bio
     categories
@@ -77,4 +77,185 @@ export const MUTATION_UPDATE_USER_VERIFICATION = `
 
 export type UpdateUserVerificationResult = {
   update_user_acceptance_by_pk: UserAcceptanceRow | null
+}
+
+// FCM Token Management
+export const QUERY_FCM_TOKENS = `
+  query GetFCMTokens($user_id: uuid!) {
+    fcm_tokens(where: {user_id: {_eq: $user_id}}, order_by: {updated_at: desc}) {
+      id
+      fcm_token
+      platform
+      created_at
+      updated_at
+    }
+  }
+`
+
+export const MUTATION_INSERT_FCM_TOKEN = `
+  mutation InsertFCMToken($user_id: uuid!, $fcm_token: String!, $platform: String) {
+    insert_fcm_tokens_one(object: {
+      user_id: $user_id,
+      fcm_token: $fcm_token,
+      platform: $platform
+    }) {
+      id
+      fcm_token
+      platform
+      created_at
+    }
+  }
+`
+
+export const MUTATION_UPDATE_FCM_TOKEN = `
+  mutation UpdateFCMToken($user_id: uuid!, $fcm_token: String!, $platform: String) {
+    update_fcm_tokens(
+      where: {user_id: {_eq: $user_id}},
+      _set: {
+        fcm_token: $fcm_token,
+        platform: $platform,
+        updated_at: "now()"
+      }
+    ) {
+      affected_rows
+      returning {
+        id
+        fcm_token
+        platform
+        updated_at
+      }
+    }
+  }
+`
+
+export const MUTATION_DELETE_FCM_TOKEN = `
+  mutation DeleteFCMToken($user_id: uuid!) {
+    delete_fcm_tokens(where: {user_id: {_eq: $user_id}}) {
+      affected_rows
+    }
+  }
+`
+
+// Notification History
+export const QUERY_NOTIFICATION_HISTORY = `
+  query GetNotificationHistory($user_id: uuid!, $limit: Int = 50) {
+    notification_history(
+      where: {user_id: {_eq: $user_id}},
+      order_by: {sent_at: desc},
+      limit: $limit
+    ) {
+      id
+      notification_type
+      title
+      body
+      sent_at
+      success
+      error_message
+    }
+  }
+`
+
+export const QUERY_NOTIFICATION_STATS = `
+  query GetNotificationStats($user_id: uuid!) {
+    notification_history_aggregate(where: {user_id: {_eq: $user_id}}) {
+      aggregate {
+        count
+      }
+    }
+    notification_history(
+      where: {user_id: {_eq: $user_id}, success: {_eq: true}},
+      order_by: {sent_at: desc},
+      limit: 1
+    ) {
+      sent_at
+    }
+  }
+`
+
+export type FCMTokenRow = {
+  id: string
+  fcm_token: string
+  platform?: string
+  created_at: string
+  updated_at: string
+}
+
+export type NotificationHistoryRow = {
+  id: string
+  notification_type: string
+  title: string
+  body: string
+  sent_at: string
+  success: boolean
+  error_message?: string
+}
+
+export type InsertFCMTokenResult = {
+  insert_fcm_tokens_one: FCMTokenRow | null
+}
+
+export type UpdateFCMTokenResult = {
+  update_fcm_tokens: {
+    affected_rows: number
+    returning: FCMTokenRow[]
+  }
+}
+
+export type DeleteFCMTokenResult = {
+  delete_fcm_tokens: {
+    affected_rows: number
+  }
+}
+
+export type NotificationHistoryResult = {
+  notification_history: NotificationHistoryRow[]
+}
+
+export type NotificationStatsResult = {
+  notification_history_aggregate: {
+    aggregate: {
+      count: number
+    }
+  }
+  notification_history: Array<{
+    sent_at: string
+  }>
+}
+
+export const QUERY_DASHBOARD_STATS = `
+  query GetDashboardStats {
+    influencer_profiles_aggregate {
+      aggregate {
+        count
+      }
+    }
+    user_acceptance_aggregate(where: {verified_user: {_eq: false}}) {
+      aggregate {
+        count
+      }
+    }
+    user_acceptance_approved: user_acceptance_aggregate(where: {verified_user: {_eq: true}}) {
+      aggregate {
+        count
+      }
+    }
+  }
+`
+
+export type DashboardStatsResult = {
+  influencer_profiles_aggregate: {
+    aggregate: {
+      count: number
+    }
+  }
+  user_acceptance_aggregate: {
+    aggregate: {
+      count: number
+    }
+  }
+  user_acceptance_approved: {
+    aggregate: {
+      count: number
+    }
+  }
 }

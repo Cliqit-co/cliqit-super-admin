@@ -65,6 +65,12 @@ A comprehensive Next.js 15 admin panel for managing the Cliqit influencer market
    - Create a Firebase project
    - Generate service account credentials
    - Configure FCM for notifications
+   - Set up the following environment variables:
+     ```env
+     FIREBASE_PROJECT_ID=your-project-id
+     FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
+     FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYour private key here\n-----END PRIVATE KEY-----\n"
+     ```
 
 5. **Start Development Server**
    ```bash
@@ -136,6 +142,50 @@ The application expects the following main entities:
 
 ### Influencers
 - Extended user profile for influencers
+
+## 🔔 Notification System
+
+The application includes a comprehensive push notification system for user approval notifications.
+
+### Features
+- **User Approval Notifications**: Automatic notifications when influencers are approved/rejected
+- **FCM Token Management**: Secure storage and retrieval of user FCM tokens
+- **Notification History**: Complete audit trail of all sent notifications
+- **Admin Testing Interface**: Tools for testing notifications and checking user token status
+- **Error Handling**: Comprehensive error handling with detailed logging
+
+### Database Schema
+```sql
+-- FCM Tokens Table
+CREATE TABLE fcm_tokens (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id),
+  fcm_token TEXT NOT NULL,
+  platform TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Notification History Table
+CREATE TABLE notification_history (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id),
+  notification_type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  sent_at TIMESTAMPTZ DEFAULT NOW(),
+  success BOOLEAN NOT NULL,
+  error_message TEXT
+);
+```
+
+### Usage
+1. **Automatic Notifications**: Notifications are automatically sent when users are approved/rejected in the influencer vetting page
+2. **Testing**: Use the Notifications page (`/dashboard/notifications`) to test notifications and check user FCM token status
+3. **Monitoring**: All notifications are logged in the database for audit purposes
+
+### Configuration
+The notification system requires Firebase Admin SDK credentials. If not configured, the system will use mock notifications for development.
 - Social media profiles
 - Vetting status and scores
 - Verification status

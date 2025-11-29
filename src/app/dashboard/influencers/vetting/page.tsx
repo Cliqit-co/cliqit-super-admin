@@ -8,8 +8,10 @@ import { Clock, Eye, TrendingUp, Mail, MapPin, Instagram } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { fetchInfluencerProfiles, updateUserVerification, type InfluencerProfile } from "@/data/influencers"
+import { fetchDashboardStats } from "@/data/dashboard"
 import { jsonToCsv, downloadCsv } from "@/lib/csv"
 import { InfluencerDetailsModal } from "@/components/dashboard/influencer-details-modal"
+import { NotificationService } from "@/lib/notification-service"
 
 export default function InfluencerVettingPage() {
   const [data, setData] = useState<InfluencerProfile[]>([])
@@ -35,13 +37,19 @@ export default function InfluencerVettingPage() {
   const [selectedInfluencer, setSelectedInfluencer] = useState<InfluencerProfile | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
+  const [stats, setStats] = useState({ pendingReviews: 0 })
+
   useEffect(() => {
     let mounted = true
     setLoading(true)
-    fetchInfluencerProfiles()
-      .then((rows) => {
+    Promise.all([
+      fetchInfluencerProfiles(),
+      fetchDashboardStats()
+    ])
+      .then(([rows, dashboardStats]) => {
         if (!mounted) return
         setData(rows)
+        setStats({ pendingReviews: dashboardStats.pendingReviews })
       })
       .catch((err) => {
         if (!mounted) return
@@ -53,8 +61,8 @@ export default function InfluencerVettingPage() {
     }
   }, [])
 
-  const pendingCount = 0 // Placeholder: replace when backend includes statuses
-  const underReviewCount = 0 // Placeholder
+  const pendingCount = stats.pendingReviews
+  const underReviewCount = 0 // Status not yet implemented in backend
 
   const cityOptions = useMemo(() => {
     const set = new Set<string>()
@@ -185,6 +193,12 @@ export default function InfluencerVettingPage() {
         setData(prev => prev.map(inf => 
           inf.id === id ? { ...inf, verifiedUser: newVerifiedStatus } : inf
         ))
+        
+        // Also update selected influencer if it's the one we're modifying
+        if (selectedInfluencer?.id === id) {
+          setSelectedInfluencer(prev => prev ? { ...prev, verifiedUser: newVerifiedStatus } : null)
+        }
+
         setError(null)
         setSuccessMessage(
           newVerifiedStatus 
@@ -192,6 +206,27 @@ export default function InfluencerVettingPage() {
             : "Influencer unapproved successfully!"
         )
         setTimeout(() => setSuccessMessage(null), 3000)
+
+        // Send notification to the user
+        try {
+          console.log('📱 Sending notification for user approval status change')
+          const notificationResult = await NotificationService.sendInfluencerApprovalNotification(
+            id,
+            newVerifiedStatus,
+            currentUser?.firstName,
+            currentUser?.niche || undefined
+          )
+          
+          if (notificationResult.success) {
+            console.log('✅ Notification sent successfully')
+          } else {
+            console.warn('⚠️ Failed to send notification:', notificationResult.error)
+            // Don't show error to user as the main action (approval) succeeded
+          }
+        } catch (notificationError) {
+          console.error('❌ Error sending notification:', notificationError)
+          // Don't show error to user as the main action (approval) succeeded
+        }
       } else {
         setError(`Failed to ${newVerifiedStatus ? 'approve' : 'unapprove'} influencer`)
       }
@@ -215,9 +250,37 @@ export default function InfluencerVettingPage() {
         setData(prev => prev.map(inf => 
           inf.id === id ? { ...inf, verifiedUser: false } : inf
         ))
+        
+        // Also update selected influencer if it's the one we're modifying
+        if (selectedInfluencer?.id === id) {
+          setSelectedInfluencer(prev => prev ? { ...prev, verifiedUser: false } : null)
+        }
+
         setError(null)
         setSuccessMessage("Influencer rejected successfully!")
         setTimeout(() => setSuccessMessage(null), 3000)
+
+        // Send notification to the user
+        try {
+          console.log('📱 Sending notification for user rejection')
+          const currentUser = data.find(inf => inf.id === id)
+          const notificationResult = await NotificationService.sendInfluencerApprovalNotification(
+            id,
+            false, // rejected
+            currentUser?.firstName,
+            currentUser?.niche || undefined
+          )
+          
+          if (notificationResult.success) {
+            console.log('✅ Rejection notification sent successfully')
+          } else {
+            console.warn('⚠️ Failed to send rejection notification:', notificationResult.error)
+            // Don't show error to user as the main action (rejection) succeeded
+          }
+        } catch (notificationError) {
+          console.error('❌ Error sending rejection notification:', notificationError)
+          // Don't show error to user as the main action (rejection) succeeded
+        }
       } else {
         setError("Failed to reject influencer")
       }
@@ -364,6 +427,7 @@ export default function InfluencerVettingPage() {
                     categories: (f.categories || []).join("; "),
                     audienceSize: f.audienceSize ?? "",
                     verifiedUser: f.verifiedUser,
+                    approvalStatus: f.verifiedUser ? "Approved" : "Pending Approval",
                     acceptedTerms: f.acceptedTerms,
                     acceptedPrivacy: f.acceptedPrivacy,
                     createdAt: f.createdAt,
@@ -384,6 +448,7 @@ export default function InfluencerVettingPage() {
                       "categories",
                       "audienceSize",
                       "verifiedUser",
+                      "approvalStatus",
                       "acceptedTerms",
                       "acceptedPrivacy",
                       "createdAt",
@@ -402,6 +467,7 @@ export default function InfluencerVettingPage() {
                       categories: "Categories",
                       audienceSize: "Audience Size",
                       verifiedUser: "Verified",
+                      approvalStatus: "Approval Status",
                       acceptedTerms: "Accepted Terms",
                       acceptedPrivacy: "Accepted Privacy",
                       createdAt: "Created At",

@@ -23,6 +23,7 @@ import {
   TrendingUp
 } from "lucide-react"
 import { type InfluencerProfile } from "@/data/influencers"
+import { NotificationService } from "@/lib/notification-service"
 
 interface InfluencerDetailsModalProps {
   influencer: InfluencerProfile & {
