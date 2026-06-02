@@ -1,27 +1,32 @@
-import { graphqlRequest } from "@/lib/graphql-client"
-import { QUERY_DASHBOARD_STATS, type DashboardStatsResult } from "./graphql"
+import { supabase } from "@/lib/supabase"
 
 export type DashboardStats = {
-    totalInfluencers: number
-    pendingReviews: number
-    approvedInfluencers: number
+  totalInfluencers: number
+  pendingReviews: number
+  approvedInfluencers: number
 }
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {
-    try {
-        const result = await graphqlRequest<DashboardStatsResult>(QUERY_DASHBOARD_STATS)
+  try {
+    const baseQuery = () => supabase
+      .from("users")
+      .select("*", { count: "exact", head: true })
+      .eq("role", "influencer")
+      .is("deleted_at", null)
 
-        return {
-            totalInfluencers: result.influencer_profiles_aggregate.aggregate.count,
-            pendingReviews: result.user_acceptance_aggregate.aggregate.count,
-            approvedInfluencers: result.user_acceptance_approved.aggregate.count,
-        }
-    } catch (error) {
-        console.error("Failed to fetch dashboard stats:", error)
-        return {
-            totalInfluencers: 0,
-            pendingReviews: 0,
-            approvedInfluencers: 0,
-        }
+    const [total, pending, approved] = await Promise.all([
+      baseQuery(),
+      baseQuery().eq("verified_user", false),
+      baseQuery().eq("verified_user", true),
+    ])
+
+    return {
+      totalInfluencers: total.count ?? 0,
+      pendingReviews: pending.count ?? 0,
+      approvedInfluencers: approved.count ?? 0,
     }
+  } catch (error) {
+    console.error("Failed to fetch dashboard stats:", error)
+    return { totalInfluencers: 0, pendingReviews: 0, approvedInfluencers: 0 }
+  }
 }

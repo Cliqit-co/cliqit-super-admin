@@ -9,7 +9,7 @@ export interface User {
   createdAt: Date
   updatedAt: Date
   lastLoginAt?: Date
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface Influencer extends User {

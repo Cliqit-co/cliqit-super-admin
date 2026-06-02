@@ -1,6 +1,5 @@
-import { graphqlRequest } from "@/lib/graphql-client"
-import { QUERY_INFLUENCER_PROFILES, QUERY_USER_ACCEPTANCE, MUTATION_UPDATE_USER_VERIFICATION, type InfluencerProfileRow, type UserAcceptanceRow, type UpdateUserVerificationResult } from "./graphql"
-import { getNhostFileUrl } from "@/lib/nhost-storage"
+import { supabase } from "@/lib/supabase"
+import { resolveStorageUrl } from "@/lib/storage"
 
 export type InfluencerProfile = {
   id: string
@@ -23,85 +22,105 @@ export type InfluencerProfile = {
   bio?: string | null
 }
 
-function mapRowToInfluencerProfile(row: InfluencerProfileRow): InfluencerProfile {
-  return {
-    id: row.user_id,
-    firstName: row.first_name ?? row.user?.displayName ?? "",
-    lastName: row.last_name ?? "",
-    email: row.user?.email ?? "",
-    emailVerified: !!row.user?.emailVerified,
-    username: row.username,
-    avatarUrl: row.user?.avatarUrl ?? null,
-    city: row.city,
-    audienceSize: row.audience_size,
-    niche: row.niche,
-    categories: row.categories,
-    socialLinks: row.social_links,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    verifiedUser: false,
-    acceptedTerms: false,
-    acceptedPrivacy: false,
-    bio: row.bio,
-  }
-}
-
-type InfluencerProfilesQueryResult = {
-  influencer_profiles: InfluencerProfileRow[]
-}
-
-type UserAcceptanceQueryResult = {
-  user_acceptance: UserAcceptanceRow[]
+interface UserWithProfileRow {
+  id: string
+  email: string
+  email_confirmed_at: boolean | null
+  display_name: string | null
+  avatar_url: string | null
+  created_at: string
+  updated_at: string
+  verified_user: boolean
+  accepted_tm: boolean
+  accepted_pp: boolean
+  influencer_profiles: Array<{
+    audience_size: string | null
+    bio: string | null
+    categories: string[] | null
+    city: string | null
+    first_name: string | null
+    last_name: string | null
+    niche: string | null
+    social_links: Record<string, unknown> | null
+    username: string | null
+    created_at: string | null
+    updated_at: string | null
+  }> | null
 }
 
 export async function fetchInfluencerProfiles(): Promise<InfluencerProfile[]> {
-  const [profilesRes, acceptanceRes] = await Promise.all([
-    graphqlRequest<InfluencerProfilesQueryResult>(QUERY_INFLUENCER_PROFILES),
-    graphqlRequest<UserAcceptanceQueryResult>(QUERY_USER_ACCEPTANCE),
-  ])
+  // Pull all influencer-role users with their profile.
+  // RLS allows superAdmin to read all users + profiles.
+  const { data, error } = await supabase
+    .from("users")
+    .select(`
+      id,
+      email,
+      email_confirmed_at,
+      display_name,
+      avatar_url,
+      created_at,
+      updated_at,
+      verified_user,
+      accepted_tm,
+      accepted_pp,
+      influencer_profiles (
+        audience_size,
+        bio,
+        categories,
+        city,
+        first_name,
+        last_name,
+        niche,
+        social_links,
+        username,
+        created_at,
+        updated_at
+      )
+    `)
+    .eq("role", "influencer")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
 
-  const acceptanceByUserId = new Map<string, UserAcceptanceRow>()
-  for (const row of acceptanceRes.user_acceptance || []) {
-    acceptanceByUserId.set(row.user_id, row)
-  }
+  if (error) throw error
 
-  const mapped = (profilesRes.influencer_profiles || []).map((row) => {
-    const base = mapRowToInfluencerProfile(row)
-    const acc = acceptanceByUserId.get(base.id)
+  const rows = (data ?? []) as unknown as UserWithProfileRow[]
+  return rows.map((row) => {
+    const profile = row.influencer_profiles?.[0] ?? null
     return {
-      ...base,
-      verifiedUser: !!acc?.verified_user,
-      acceptedTerms: !!acc?.accepted_tm,
-      acceptedPrivacy: !!acc?.accepted_pp,
+      id: row.id,
+      firstName: profile?.first_name ?? row.display_name ?? "",
+      lastName: profile?.last_name ?? "",
+      email: row.email,
+      emailVerified: !!row.email_confirmed_at,
+      username: profile?.username ?? row.email?.split("@")[0] ?? "unknown",
+      avatarUrl: resolveStorageUrl(row.avatar_url ?? undefined),
+      city: profile?.city ?? null,
+      audienceSize: profile?.audience_size ?? null,
+      niche: profile?.niche ?? null,
+      categories: profile?.categories ?? null,
+      socialLinks: profile?.social_links ?? null,
+      createdAt: profile?.created_at ?? row.created_at,
+      updatedAt: profile?.updated_at ?? row.updated_at,
+      verifiedUser: !!row.verified_user,
+      acceptedTerms: !!row.accepted_tm,
+      acceptedPrivacy: !!row.accepted_pp,
+      bio: profile?.bio ?? null,
     }
   })
-
-  // Resolve avatar URLs in parallel for any that look like file IDs
-  const resolved = await Promise.all(
-    mapped.map(async (p) => ({
-      ...p,
-      avatarUrl: await getNhostFileUrl(p.avatarUrl || undefined),
-    }))
-  )
-
-  return resolved
 }
 
-export async function updateUserVerification(userId: string, verified: boolean): Promise<boolean> {
-  try {
-    const result = await graphqlRequest<UpdateUserVerificationResult>(
-      MUTATION_UPDATE_USER_VERIFICATION,
-      {
-        user_id: userId,
-        verified_user: verified
-      }
-    )
-    
-    return !!result.update_user_acceptance_by_pk
-  } catch (error) {
-    console.error('Failed to update user verification:', error)
-    throw new Error('Failed to update user verification status')
+export async function updateUserVerification(
+  userId: string,
+  verified: boolean,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("users")
+    .update({ verified_user: verified })
+    .eq("id", userId)
+  if (error) {
+    console.error("Failed to update user verification:", error)
+    throw new Error("Failed to update user verification status")
   }
+  return true
 }
-
-

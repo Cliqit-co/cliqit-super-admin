@@ -1,8 +1,8 @@
 "use client"
 
-import { ReactNode, useEffect } from "react"
-import { useAuthenticationStatus } from "@nhost/nextjs"
+import { ReactNode, useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
+import { supabase } from "@/lib/supabase"
 
 type RequireAuthProps = {
   children: ReactNode
@@ -11,24 +11,54 @@ type RequireAuthProps = {
 export function RequireAuth({ children }: RequireAuthProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const { isLoading, isAuthenticated } = useAuthenticationStatus()
+  const [status, setStatus] = useState<"loading" | "authed" | "unauthed">("loading")
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      const redirectParam = pathname ? `?redirectTo=${encodeURIComponent(pathname)}` : ""
-      router.replace(`/sign-in${redirectParam}`)
+    let cancelled = false
+
+    async function check() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (cancelled) return
+
+      if (!user) {
+        setStatus("unauthed")
+        const redirectParam = pathname ? `?redirectTo=${encodeURIComponent(pathname)}` : ""
+        router.replace(`/sign-in${redirectParam}`)
+        return
+      }
+
+      // Gate to superAdmin role on every protected page (defense in depth).
+      const { data: profile } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", user.id)
+        .single()
+      if (cancelled) return
+
+      if (!profile || profile.role !== "superAdmin") {
+        await supabase.auth.signOut()
+        setStatus("unauthed")
+        router.replace("/sign-in")
+        return
+      }
+
+      setStatus("authed")
     }
-  }, [isLoading, isAuthenticated, router, pathname])
+    check()
 
-  if (isLoading) {
-    return null
-  }
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        setStatus("unauthed")
+        router.replace("/sign-in")
+      }
+    })
 
-  if (!isAuthenticated) {
-    return null
-  }
+    return () => {
+      cancelled = true
+      sub.subscription.unsubscribe()
+    }
+  }, [router, pathname])
 
+  if (status !== "authed") return null
   return <>{children}</>
 }
-
-

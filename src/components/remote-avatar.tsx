@@ -1,7 +1,9 @@
+"use client"
+
 import Image from "next/image"
 import { User } from "lucide-react"
-import { getNhostFileUrl } from "@/lib/nhost-storage"
-import { useEffect, useState } from "react"
+import { resolveStorageUrl } from "@/lib/storage"
+import { useMemo } from "react"
 
 interface RemoteAvatarProps {
   src?: string | null
@@ -11,23 +13,7 @@ interface RemoteAvatarProps {
 }
 
 export function RemoteAvatar({ src, alt = "Avatar", size = 48, className }: RemoteAvatarProps) {
-  const [resolved, setResolved] = useState<string | null>(null)
-
-  useEffect(() => {
-    let mounted = true
-    getNhostFileUrl(src || undefined)
-      .then((u) => {
-        if (mounted) setResolved(u)
-      })
-      .catch(() => {
-        if (mounted) setResolved(null)
-      })
-    return () => {
-      mounted = false
-    }
-  }, [src])
-
-  const isNhostUrl = (url: string) => /\.nhost\.run\//.test(url)
+  const resolved = useMemo(() => resolveStorageUrl(src || undefined), [src])
 
   return (
     <div
@@ -40,7 +26,7 @@ export function RemoteAvatar({ src, alt = "Avatar", size = 48, className }: Remo
           alt={alt}
           width={size}
           height={size}
-          unoptimized={isNhostUrl(resolved)}
+          unoptimized
         />
       ) : (
         <User className="h-1/2 w-1/2 text-primary" />

@@ -8,7 +8,7 @@ export interface Application {
   reviewedBy?: string
   notes?: string
   attachments?: string[]
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface Gig {

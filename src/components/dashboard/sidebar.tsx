@@ -1,13 +1,13 @@
 "use client"
 import Link from "next/link"
-import { 
-  LayoutDashboard, 
-  UserCheck, 
+import {
+  LayoutDashboard,
+  UserCheck,
   Bell,
-  LogOut
+  LogOut,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { nhost } from "@/lib/nhost"
+import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 
 const navigation = [
@@ -20,12 +20,12 @@ export function Sidebar() {
   const router = useRouter()
 
   const handleLogout = async () => {
-    await nhost.auth.signOut()
+    await supabase.auth.signOut()
     router.replace("/sign-in")
   }
+
   return (
     <div className="flex h-full w-64 flex-col bg-white border-r border-gray-200">
-      {/* Logo Section */}
       <div className="flex h-16 items-center px-6 border-b border-gray-200">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
@@ -37,8 +37,7 @@ export function Sidebar() {
           </div>
         </div>
       </div>
-      
-      {/* Navigation */}
+
       <nav className="flex-1 px-4 py-6 space-y-2">
         {navigation.map((item) => (
           <Link
@@ -51,8 +50,7 @@ export function Sidebar() {
           </Link>
         ))}
       </nav>
-      
-      {/* User Section */}
+
       <div className="p-4 border-t border-gray-200">
         <div className="flex items-center space-x-3 mb-3">
           <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
@@ -63,8 +61,8 @@ export function Sidebar() {
             <p className="text-xs text-gray-500">admin@cliqit.com</p>
           </div>
         </div>
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           className="w-full justify-start text-gray-600 hover:text-gray-900 hover:bg-gray-50"
           onClick={handleLogout}
         >
