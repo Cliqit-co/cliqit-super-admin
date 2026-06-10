@@ -25,7 +25,7 @@ export type InfluencerProfile = {
 interface UserWithProfileRow {
   id: string
   email: string
-  email_confirmed_at: boolean | null
+  email_verified: boolean
   display_name: string | null
   avatar_url: string | null
   created_at: string
@@ -49,38 +49,11 @@ interface UserWithProfileRow {
 }
 
 export async function fetchInfluencerProfiles(): Promise<InfluencerProfile[]> {
-  // Pull all influencer-role users with their profile.
-  // RLS allows superAdmin to read all users + profiles.
-  const { data, error } = await supabase
-    .from("users")
-    .select(`
-      id,
-      email,
-      email_confirmed_at,
-      display_name,
-      avatar_url,
-      created_at,
-      updated_at,
-      verified_user,
-      accepted_tm,
-      accepted_pp,
-      influencer_profiles (
-        audience_size,
-        bio,
-        categories,
-        city,
-        first_name,
-        last_name,
-        niche,
-        social_links,
-        username,
-        created_at,
-        updated_at
-      )
-    `)
-    .eq("role", "influencer")
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false })
+  // Pull all influencer-role users with their profile via a SECURITY DEFINER
+  // RPC guarded by is_super_admin(). PII columns (email) are column-restricted
+  // on public.users for the authenticated role, so the direct select can no
+  // longer read them — the RPC returns the full rows for super-admins only.
+  const { data, error } = await supabase.rpc("admin_list_influencers")
 
   if (error) throw error
 
@@ -92,7 +65,7 @@ export async function fetchInfluencerProfiles(): Promise<InfluencerProfile[]> {
       firstName: profile?.first_name ?? row.display_name ?? "",
       lastName: profile?.last_name ?? "",
       email: row.email,
-      emailVerified: !!row.email_confirmed_at,
+      emailVerified: !!row.email_verified,
       username: profile?.username ?? row.email?.split("@")[0] ?? "unknown",
       avatarUrl: resolveStorageUrl(row.avatar_url ?? undefined),
       city: profile?.city ?? null,
