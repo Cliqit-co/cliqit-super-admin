@@ -41,7 +41,14 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-    ], 
+      // Supabase Storage (avatars via RemoteAvatar / Next Image)
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
   },
 };
 
