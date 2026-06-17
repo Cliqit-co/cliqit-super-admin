@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect, useRef } from "react"
+import Image from "next/image"
 import { AlertCircle, FileText, Loader2, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { RemoteAvatar } from "@/components/remote-avatar"
@@ -172,10 +173,14 @@ function MessageBubble({ msg, isBusiness }: { msg: ChatMessage; isBusiness: bool
     return (
       <div className={cn(bubbleClass, "p-1.5")}>
         {src ? (
-          <img
+          <Image
             src={src}
             alt="Image message"
-            className="rounded-xl max-w-xs max-h-64 object-cover"
+            width={0}
+            height={0}
+            sizes="320px"
+            className="rounded-xl object-cover"
+            style={{ width: "100%", height: "auto", maxWidth: "320px", maxHeight: "256px" }}
             onError={(e) => {
               const target = e.currentTarget
               target.style.display = "none"

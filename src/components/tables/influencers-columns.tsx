@@ -3,7 +3,6 @@
 import { ColumnDef } from "@tanstack/react-table"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { InfluencerProfile } from "@/data/influencers"
 
 export const influencerColumns: ColumnDef<InfluencerProfile>[] = [

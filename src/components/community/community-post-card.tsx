@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { Heart, MessageCircle, Eye, EyeOff, Trash2, RotateCcw, ImageOff } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -80,9 +81,12 @@ export function CommunityPostCard({
             {/* Media */}
             {post.mediaFileUrl && (
               <div className="mb-3 rounded-md overflow-hidden max-w-xs">
-                <img
+                <Image
                   src={post.mediaFileUrl}
                   alt="Post media"
+                  width={0}
+                  height={0}
+                  sizes="100vw"
                   className="w-full h-auto object-cover max-h-48"
                   onError={(e) => {
                     const target = e.currentTarget

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import { resolveStorageUrl } from "@/lib/storage"
 import { cn } from "@/lib/utils"
 import { X } from "lucide-react"
@@ -28,10 +29,11 @@ export function MediaGallery({ urls, className }: MediaGalleryProps) {
             className="relative h-24 w-24 shrink-0 overflow-hidden rounded-md border border-gray-200 cursor-pointer bg-gray-100"
             onClick={() => setLightboxSrc(src)}
           >
-            <img
+            <Image
+              fill
               src={src}
               alt={`media-${i}`}
-              className="h-full w-full object-cover"
+              className="object-cover"
               onError={(e) => {
                 const target = e.currentTarget
                 target.style.display = "none"
@@ -60,10 +62,14 @@ export function MediaGallery({ urls, className }: MediaGalleryProps) {
           >
             <X className="h-6 w-6" />
           </button>
-          <img
+          <Image
             src={lightboxSrc}
             alt="lightbox"
-            className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+            width={0}
+            height={0}
+            sizes="90vw"
+            className="rounded-lg object-contain"
+            style={{ maxHeight: "90vh", maxWidth: "90vw", width: "auto", height: "auto" }}
             onClick={(e) => e.stopPropagation()}
           />
         </div>

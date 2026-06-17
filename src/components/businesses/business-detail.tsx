@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -286,11 +287,12 @@ function OverviewTab({ business }: { business: BusinessDetail }) {
       {/* Cover image */}
       {coverUrl && (
         <Card>
-          <CardContent className="p-0 overflow-hidden rounded-lg">
-            <img
+          <CardContent className="p-0 overflow-hidden rounded-lg relative h-48">
+            <Image
+              fill
               src={coverUrl}
               alt="Cover"
-              className="w-full h-48 object-cover"
+              className="object-cover"
               onError={(e) => {
                 ;(e.currentTarget as HTMLImageElement).style.display = "none"
               }}
@@ -384,15 +386,17 @@ function OverviewTab({ business }: { business: BusinessDetail }) {
               {(business.photos as string[]).map((p, i) => {
                 const url = resolveStorageUrl(p)
                 return url ? (
-                  <img
-                    key={i}
+                  <div key={i} className="relative aspect-square w-full">
+                  <Image
+                    fill
                     src={url}
                     alt={`Photo ${i + 1}`}
-                    className="rounded-md object-cover aspect-square w-full"
+                    className="rounded-md object-cover"
                     onError={(e) => {
                       ;(e.currentTarget as HTMLImageElement).style.display = "none"
                     }}
                   />
+                  </div>
                 ) : null
               })}
             </div>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
+import Image from "next/image"
 import { ArrowLeft, Eye, EyeOff, Trash2, RotateCcw, ImageOff, Heart, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -259,9 +260,12 @@ export default function CommunityPostDetailPage() {
           {/* Media */}
           {post.mediaFileUrl && (
             <div className="rounded-lg overflow-hidden max-w-lg">
-              <img
+              <Image
                 src={post.mediaFileUrl}
                 alt="Post media"
+                width={0}
+                height={0}
+                sizes="100vw"
                 className="w-full h-auto object-cover"
                 onError={(e) => {
                   const target = e.currentTarget

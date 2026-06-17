@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { UserCheck, Clock, CheckCircle, XCircle, TrendingUp } from "lucide-react"
+import { UserCheck, Clock, CheckCircle, TrendingUp } from "lucide-react"
 import { fetchDashboardStats, type DashboardStats } from "@/data/dashboard"
 import Link from "next/link"
 

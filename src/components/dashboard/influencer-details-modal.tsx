@@ -6,24 +6,20 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/dashboard/status-badge"
 import { 
-  X, 
-  CheckCircle, 
-  XCircle, 
+  X,
+  CheckCircle,
+  XCircle,
   User,
   Mail,
-  Phone,
   MapPin,
   Users,
   Instagram,
-  Calendar,
   CheckSquare,
   Square,
   AlertCircle,
   Star,
-  TrendingUp
 } from "lucide-react"
 import { type InfluencerProfile } from "@/data/influencers"
-import { NotificationService } from "@/lib/notification-service"
 
 interface InfluencerDetailsModalProps {
   influencer: InfluencerProfile & {

@@ -114,7 +114,7 @@ export function BroadcastComposer() {
     }
   }
 
-  function onSubmitForm(values: FormValues) {
+  function onSubmitForm() {
     void handlePreviewCount().then(() => {
       setConfirmOpen(true)
     })
